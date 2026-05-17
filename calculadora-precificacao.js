@@ -11,6 +11,7 @@ const PRICING_DEFAULTS = {
 const INPUT_DEFAULTS = {
   weight: 120,
   hours: 4,
+  minutes: 0,
   filamentCost: PRICING_DEFAULTS.filamentPricePerGram,
   extraCosts: 0,
   extraCostsMultiplier: 1,
@@ -23,7 +24,8 @@ const STORAGE_KEY = 'calculadora_precificacao_v2';
 
 const FIELD_RULES = {
   weight: { min: 0, max: 50000, decimals: 2 },
-  hours: { min: 0, max: 1000, decimals: 2 },
+  hours: { min: 0, max: 1000, decimals: 0 },
+  minutes: { min: 0, max: 59, decimals: 0 },
   filamentCost: { min: 0, max: 10, decimals: 3 },
   extraCosts: { min: 0, max: 1000, decimals: 2 },
   extraCostsMultiplier: { min: 1, max: 200, decimals: 0 },
@@ -68,9 +70,10 @@ function calculatePricingSuggestion(input) {
   };
 }
 
-function buildPriceRows(unitCost, customProfitRaw) {
+function buildPriceRows(unitCost, customProfitRaw, totalPieces = 1) {
   const customProfit = Number(String(customProfitRaw).replace(',', '.'));
   const percentages = [...SUGGESTION_PERCENTAGES];
+  const numPieces = Math.max(1, Math.floor(Number(totalPieces) || 1));
 
   if (Number.isFinite(customProfit) && customProfit > 0 && !percentages.includes(customProfit)) {
     percentages.push(customProfit);
@@ -79,8 +82,9 @@ function buildPriceRows(unitCost, customProfitRaw) {
   return percentages
     .sort((a, b) => a - b)
     .map((percent) => {
-      const price = roundCurrency(unitCost * (1 + percent / 100));
-      const gain = roundCurrency(price - unitCost);
+      const totalCost = roundCurrency(unitCost * numPieces);
+      const price = roundCurrency(totalCost * (1 + percent / 100));
+      const gain = roundCurrency(price - totalCost);
       return { percent, price, gain };
     });
 }
@@ -89,6 +93,7 @@ function initCalculator() {
   const refs = {
     weight: document.getElementById('weight'),
     hours: document.getElementById('hours'),
+    minutes: document.getElementById('minutes'),
     filamentCost: document.getElementById('filamentCost'),
     extraCosts: document.getElementById('extraCosts'),
     extraCostsMultiplier: document.getElementById('extraCostsMultiplier'),
@@ -154,6 +159,7 @@ function initCalculator() {
     return {
       weight: normalizeNumber(refs.weight.value, FIELD_RULES.weight),
       hours: normalizeNumber(refs.hours.value, FIELD_RULES.hours),
+      minutes: normalizeNumber(refs.minutes.value, FIELD_RULES.minutes),
       filamentCost: normalizeNumber(refs.filamentCost.value, FIELD_RULES.filamentCost),
       extraCosts: normalizeNumber(refs.extraCosts.value, FIELD_RULES.extraCosts),
       extraCostsMultiplier: normalizeNumber(refs.extraCostsMultiplier.value, FIELD_RULES.extraCostsMultiplier),
@@ -165,6 +171,7 @@ function initCalculator() {
   function setInputs(values) {
     refs.weight.value = String(values.weight);
     refs.hours.value = String(values.hours);
+    refs.minutes.value = String(values.minutes);
     refs.filamentCost.value = String(values.filamentCost);
     refs.extraCosts.value = String(values.extraCosts);
     refs.extraCostsMultiplier.value = String(values.extraCostsMultiplier);
@@ -196,6 +203,7 @@ function initCalculator() {
       setInputs({
         weight: Number.isFinite(parsed.weight) ? parsed.weight : INPUT_DEFAULTS.weight,
         hours: Number.isFinite(parsed.hours) ? parsed.hours : INPUT_DEFAULTS.hours,
+        minutes: Number.isFinite(parsed.minutes) ? parsed.minutes : INPUT_DEFAULTS.minutes,
         filamentCost: Number.isFinite(parsed.filamentCost) ? parsed.filamentCost : INPUT_DEFAULTS.filamentCost,
         extraCosts: Number.isFinite(parsed.extraCosts) ? parsed.extraCosts : INPUT_DEFAULTS.extraCosts,
         extraCostsMultiplier: Number.isFinite(parsed.extraCostsMultiplier) ? parsed.extraCostsMultiplier : INPUT_DEFAULTS.extraCostsMultiplier,
@@ -207,8 +215,8 @@ function initCalculator() {
     }
   }
 
-  function renderSuggestionTables(unitCost, customProfitRaw) {
-    const rows = buildPriceRows(unitCost, customProfitRaw);
+  function renderSuggestionTables(unitCost, customProfitRaw, totalPieces) {
+    const rows = buildPriceRows(unitCost, customProfitRaw, totalPieces);
     lastPriceRows = rows;
 
     refs.suggestionsBody.innerHTML = rows.map((row) => {
@@ -241,9 +249,10 @@ function initCalculator() {
 
   function update() {
     const inputs = readInputs();
+    const totalPrintHours = inputs.hours + (inputs.minutes / 60);
     const suggestion = calculatePricingSuggestion({
       weightGrams: inputs.weight,
-      printHours: inputs.hours,
+      printHours: totalPrintHours,
       filamentPricePerGram: inputs.filamentCost,
       additionalCostsPerPiece: inputs.extraCosts,
       trayPieceQuantity: inputs.extraCostsMultiplier,
@@ -262,7 +271,7 @@ function initCalculator() {
     refs.traysNeeded.textContent = String(suggestion.traysNeeded);
     refs.productionFinalCost.textContent = formatBRL(suggestion.productionFinalCost);
 
-    renderSuggestionTables(suggestion.productionUnitCost, inputs.customProfit);
+    renderSuggestionTables(suggestion.productionUnitCost, inputs.customProfit, inputs.totalPieces);
     saveInputs();
   }
 
@@ -273,7 +282,7 @@ function initCalculator() {
     return [
       'Resumo de precificacao 3D',
       `Peso: ${inputValues.weight} g`,
-      `Horas de impressao: ${inputValues.hours} h`,
+      `Tempo de impressao: ${inputValues.hours} h ${inputValues.minutes} min`,
       `Custo filamento: ${formatBRL(inputValues.filamentCost)} por g`,
       `Outros custos por peca: ${formatBRL(inputValues.extraCosts)}`,
       `Pecas por placa: ${inputValues.extraCostsMultiplier}`,
@@ -317,6 +326,7 @@ function initCalculator() {
 
   refs.weight.addEventListener('input', update);
   refs.hours.addEventListener('input', update);
+  refs.minutes.addEventListener('input', update);
   refs.filamentCost.addEventListener('input', update);
   refs.extraCosts.addEventListener('input', update);
   refs.extraCostsMultiplier.addEventListener('input', update);
@@ -329,6 +339,10 @@ function initCalculator() {
   });
   refs.hours.addEventListener('blur', () => {
     sanitizeInput(refs.hours, FIELD_RULES.hours, true);
+    update();
+  });
+  refs.minutes.addEventListener('blur', () => {
+    sanitizeInput(refs.minutes, FIELD_RULES.minutes, false);
     update();
   });
   refs.filamentCost.addEventListener('blur', () => {
@@ -368,6 +382,7 @@ function initCalculator() {
       ...INPUT_DEFAULTS,
       weight: 0,
       hours: 0,
+      minutes: 0,
       filamentCost: 0,
       customProfit: '',
     });
