@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de custo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./calculadora-precificacao.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <header class="top-header">
+      <div>
+        <p class="page-kicker">Calculadora</p>
+        <h1>Calculadora de custo</h1>
+        <p class="subtitle">Calcule custo de lote, custo unitario e sugestoes de preco.</p>
+      </div>
+      <div class="header-actions">
+        <button type="button" id="resetDefaults" class="btn btn-light">Restaurar padroes</button>
+        <button type="button" id="clearFields" class="btn btn-light">Limpar</button>
+        <button type="button" id="copySummary" class="btn btn-primary">Copiar resumo</button>
+      </div>
+    </header>
+
+    <p class="action-feedback" id="actionFeedback" aria-live="polite"></p>
+
+    <section class="layout-grid" aria-label="Calculadora de precificacao">
+      <div class="column">
+        <article class="panel">
+          <h2>Impressao</h2>
+          <div class="field-grid">
+            <div class="field span-2">
+              <label for="weight">Peso da peca (g)</label>
+              <input id="weight" type="text" inputmode="decimal" value="120" />
+            </div>
+            <div class="field">
+              <label for="hours">Tempo (h)</label>
+              <input id="hours" type="text" inputmode="decimal" value="4" />
+            </div>
+            <div class="field">
+              <label for="totalPieces">N de pecas</label>
+              <input id="totalPieces" type="text" inputmode="numeric" value="1" />
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2>Material</h2>
+          <div class="field-grid">
+            <div class="field span-2">
+              <label for="filamentCost">Custo do filamento (R$/g)</label>
+              <input id="filamentCost" type="text" inputmode="decimal" value="0.08" />
+            </div>
+            <div class="field">
+              <label for="extraCostsMultiplier">Unidades/placa</label>
+              <input id="extraCostsMultiplier" type="text" inputmode="numeric" value="1" />
+            </div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2>Custo extra</h2>
+          <div class="field-grid">
+            <div class="field span-3">
+              <label for="extraCosts">Valor por peca (R$)</label>
+              <input id="extraCosts" type="text" inputmode="decimal" value="0" />
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <div class="column">
+        <article class="panel">
+          <h2>Resumo</h2>
+          <div class="summary-box" aria-live="polite">
+            <div class="summary-line"><span>Energia</span><strong id="energyCost">R$ 0,00</strong></div>
+            <div class="summary-line"><span>Materia-prima</span><strong id="materialCost">R$ 0,00</strong></div>
+            <div class="summary-line"><span>Depreciacao</span><strong id="depreciationCost">R$ 0,00</strong></div>
+            <div class="summary-line"><span>Falhas</span><strong id="failureCost">R$ 0,00</strong></div>
+            <div class="summary-line"><span>Custo extra</span><strong id="additionalCosts">R$ 0,00</strong></div>
+            <div class="summary-line total"><span>1 placa</span><strong id="productionCost">R$ 0,00</strong></div>
+            <div class="summary-line emphasis"><span>Por unidade</span><strong id="productionUnitCost">R$ 0,00</strong></div>
+            <div class="summary-line meta"><span>Bandejas necessarias</span><strong id="traysNeeded">0</strong></div>
+            <div class="summary-line meta"><span>Custo final de producao</span><strong id="productionFinalCost">R$ 0,00</strong></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2>Sugestoes de preco</h2>
+          <div class="field-grid compact">
+            <div class="field span-3">
+              <label for="customProfit">Lucro personalizado (%)</label>
+              <input id="customProfit" type="text" inputmode="decimal" placeholder="ex: 250" />
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Lucro</th>
+                  <th>Preco</th>
+                  <th>Ganho</th>
+                </tr>
+              </thead>
+              <tbody id="suggestionsBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+
+      <div class="column">
+        <article class="panel">
+          <h2>Preco na Shopee</h2>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Lucro</th>
+                  <th>Anunciar por</th>
+                  <th>Liquido</th>
+                </tr>
+              </thead>
+              <tbody id="shopeeBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script src="./calculadora-precificacao.js"></script>
+</body>
+</html>
